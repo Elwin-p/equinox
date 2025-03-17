@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'homepage.dart';
 
 class HiringScreen extends StatefulWidget {
   @override
@@ -17,7 +19,7 @@ class _HiringScreenState extends State<HiringScreen> {
   List<String> sectors = [];
   String? selectedSector;
   String? selectedCompanySize;
-  List<String> companySizes = ['Small', 'Medium', 'Large'];
+  List<String> companySizes = ['Small (1-10)', 'Medium(11-100)', 'Large(100+)'];
 
   @override
   void initState() {
@@ -26,13 +28,44 @@ class _HiringScreenState extends State<HiringScreen> {
   }
 
   Future<void> loadIndustries() async {
-  String jsonString = await rootBundle.loadString('assets/sector.json');
-  Map<String, dynamic> jsonData = json.decode(jsonString);
-  
-  setState(() {
-    sectors = List<String>.from(jsonData["industries"]); // Extract list correctly
-  });
-}
+    String jsonString = await rootBundle.loadString('assets/sector.json');
+    Map<String, dynamic> jsonData = json.decode(jsonString);
+    setState(() {
+      sectors = List<String>.from(jsonData["industries"]);
+    });
+  }
+
+  void saveToFirebase() {
+    if (companyNameController.text.isEmpty ||
+        companyWebsiteController.text.isEmpty ||
+        companyLinkedInController.text.isEmpty ||
+        selectedSector == null ||
+        selectedCompanySize == null ||
+        locationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill in all fields.')),
+      );
+      return;
+    }
+
+    FirebaseFirestore.instance.collection('hirers').add({
+      'companyName': companyNameController.text,
+      'companyWebsite': companyWebsiteController.text,
+      'companyLinkedIn': companyLinkedInController.text,
+      'sector': selectedSector,
+      'companySize': selectedCompanySize,
+      'location': locationController.text,
+    }).then((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage()),
+      );
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving data. Please try again.')),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,15 +114,23 @@ class _HiringScreenState extends State<HiringScreen> {
               SizedBox(height: 16),
               
               Text('Location', style: TextStyle(fontSize: 17)),
-              TextField(controller: locationController, decoration: InputDecoration(border: OutlineInputBorder())),
+              TextField(controller: locationController, decoration: InputDecoration(border: OutlineInputBorder(), hintText: 'Distict,State,County')),
               SizedBox(height: 16),
               
               ElevatedButton(
-                onPressed: () {
-                  // Process the hiring data
-                },
-                child: Text('Submit'),
-              )
+                onPressed: saveToFirebase,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF7F50), // Coral Orange button
+                  foregroundColor: Colors.white, // Text color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         ),

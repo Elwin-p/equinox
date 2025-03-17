@@ -59,5 +59,7 @@
     { "degree_title": "Bachelor of Homeopathic Medicine and Surgery", "degree_reference": "BHMS", "degree_level": "bachelor"},
     { "degree_title": "Master of Homeopathic Medicine and Surgery", "degree_reference": "MD (Homeopathy)", "degree_level": "master"},
     { "degree_title": "Bachelor of Unani Medicine and Surgery", "degree_reference": "BUMS", "degree_level": "bachelor"},
-    { "degree_title": "Master of Unani Medicine and Surgery", "degree_reference": "MD (Unani)", "degree_level": "master"}
+    { "degree_title": "Master of Unani Medicine and Surgery", "degree_reference": "MD (Unani)", "degree_level": "master"},
+    { "degree_title": "No Job", "degree_reference": "none", "degree_level": "none"},
+    { "degree_title": "Working", "degree_reference": "worker", "degree_level": "worker"}
   ]

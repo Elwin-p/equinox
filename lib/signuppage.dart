@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'signinpage.dart'; // Import SignInPage
 import 'userpreference.dart';
 
@@ -11,14 +12,24 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   bool _obscurePassword = true;
   String? _selectedCountry;
-
   final List<String> _countries = [
     'United States', 'United Kingdom', 'Canada', 'India', 'Australia',
     'Germany', 'France', 'Japan', 'China', 'Brazil', 'South Africa'
   ]; // Example countries
+
+  void _signUpAnonymously() async {
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => UserPreferenceScreen()),
+      );
+    } catch (e) {
+      print('Anonymous sign-in failed: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +38,11 @@ class _SignUpPageState extends State<SignUpPage> {
       appBar: AppBar(
         title: const Text(
           'Sign Up',
-           style: TextStyle(
+          style: TextStyle(
             color: Color(0xFF3D59AB),
             fontSize: 40,
             fontWeight: FontWeight.bold,
           ), // Deep Blue heading 
-          
         ),
         backgroundColor: const Color(0xFFF7F7F7),
         iconTheme: const IconThemeData(color: Color(0xFF333333)), // Dark Charcoal
@@ -55,24 +65,22 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
                 // Email Input Field
                 TextFormField(
-                  decoration:  InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
                     labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0),),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Password Input Field with Visibility Toggle
                 TextFormField(
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     labelStyle: const TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border:  OutlineInputBorder(borderRadius: BorderRadius.circular(15.0),),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -87,24 +95,22 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Phone Number Input Field
                 TextFormField(
                   keyboardType: TextInputType.phone,
-                  decoration:  InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Phone Number',
                     labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0),),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Country Dropdown
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
                     labelText: 'Select Country',
                     labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0),),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
                   ),
                   value: _selectedCountry,
                   items: _countries.map((country) {
@@ -120,21 +126,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   },
                 ),
                 const SizedBox(height: 30),
-
                 // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => UserPreferenceScreen()),
-                        );
-                      }
-                    },
+                    onPressed: _signUpAnonymously,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF7F50), // Coral Orange button
                       foregroundColor: Colors.white, // Text color
@@ -149,7 +146,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Already have an account? Sign In
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -162,8 +158,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => const SignInPage()),
+                          MaterialPageRoute(builder: (context) => const SignInPage()),
                         );
                       },
                       child: const Text(
