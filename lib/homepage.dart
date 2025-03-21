@@ -1,15 +1,24 @@
+//this is home page
+
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'gemini.dart';
 
 class HomePage extends StatefulWidget {
   final String? skill;
   final int? hoursPerDay;
+  final String? level;
 
-  const HomePage({Key? key, this.skill, this.hoursPerDay}) : super(key: key);
+  const HomePage({
+    Key? key, 
+    this.skill, 
+    this.hoursPerDay, 
+    this.level
+  }) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -20,8 +29,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   String userName = "User"; // Default name
   double progress = 0.0;
   int completedSubtopics = 0;
-  int totalSubtopics = 8;
   int _currentIndex = 0; // For bottom navigation
+  Map<String, dynamic>? learningData;
+  bool isLoading = true;
+  String error = '';
+  int estimatedDays = 0;
+  int totalSubtopics = 0;
   
   // Animation controllers
   late AnimationController _animationController;
@@ -33,23 +46,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final Color accentColor = const Color(0xFFFF8C32);
   final Color bgColor = const Color(0xFFF9F9F9);
   
-  // Countdown timer values
-  final int days = 10;
-  final int hours = 12;
-  final int minutes = 30;
-
-  // Learning data
-  final Map<String, List<String>> learningPath = {
-    'Flutter Development': ['Widgets', 'State Management', 'Navigation', 'Networking'],
-    'Machine Learning': ['Supervised Learning', 'Unsupervised Learning', 'Deep Learning', 'Model Deployment'],
-  };
-
-  Map<String, Set<String>> completedTopics = {};
+  // Completed topics tracking
+  final Map<String, Set<String>> completedTopics = {};
 
   @override
   void initState() {
     super.initState();
-    loadUserName();
     
     // Initialize animation controller
     _animationController = AnimationController(
@@ -64,6 +66,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
     
+    // Load user data and learning path
+    _initializeData();
+  }
+
+  /// Initialize all required data
+  Future<void> _initializeData() async {
+    await loadUserName();
+    await _loadLearningPath();
     _animationController.forward();
   }
 
@@ -75,16 +85,64 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   /// Loads the user name from SharedPreferences
   Future<void> loadUserName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString('user_name') ?? "User";
-    });
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      setState(() {
+        userName = prefs.getString('user_name') ?? "User";
+      });
+    } catch (e) {
+      debugPrint('Error loading username: $e');
+    }
+  }
+
+  /// Loads learning path data from Gemini service
+  Future<void> _loadLearningPath() async {
+    if (widget.skill == null || widget.hoursPerDay == null || widget.level == null) {
+      setState(() {
+        error = 'Missing required parameters';
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final data = await GeminiService.getLearningPath(
+        widget.skill!,
+        widget.hoursPerDay!,
+        widget.level!,
+      );
+
+      if (mounted) {
+        setState(() {
+          learningData = data;
+          estimatedDays = data['estimatedDays'] ?? 30;
+          
+          // Calculate total subtopics
+          totalSubtopics = 0;
+          final topics = List<Map<String, dynamic>>.from(data['topics'] ?? []);
+          for (var topic in topics) {
+            final subtopics = List<String>.from(topic['subtopics'] ?? []);
+            totalSubtopics += subtopics.length;
+          }
+          
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          error = 'Failed to load learning path: $e';
+          isLoading = false;
+        });
+      }
+    }
   }
 
   /// Toggles the completion status of a subtopic
   void toggleSubtopicCompletion(String topic, String subtopic) {
     setState(() {
       completedTopics.putIfAbsent(topic, () => <String>{});
+      
       if (completedTopics[topic]!.contains(subtopic)) {
         completedTopics[topic]!.remove(subtopic);
         completedSubtopics--;
@@ -92,7 +150,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         completedTopics[topic]!.add(subtopic);
         completedSubtopics++;
       }
-      progress = completedSubtopics / totalSubtopics;
+      
+      progress = totalSubtopics > 0 ? completedSubtopics / totalSubtopics : 0;
     });
   }
 
@@ -118,7 +177,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           const Spacer(),
           _buildStreakIndicator(),
           const SizedBox(width: 16),
-          Icon(Icons.notifications_outlined, color: Colors.black54),
+          const Icon(Icons.notifications_outlined, color: Colors.black54),
           const SizedBox(width: 16),
           Container(
             decoration: BoxDecoration(
@@ -133,31 +192,32 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   /// Builds the main body content with animations
-  Widget _buildBody() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildWelcomeSection(),
-                const SizedBox(height: 24),
-                _buildCountdownTimer(),
-                const SizedBox(height: 24),
-                _buildLearningPathSection(),
-                _buildProgressIndicator(),
-                const SizedBox(height: 20),
-              ],
-            ),
+Widget _buildBody() {
+  return FadeTransition(
+    opacity: _fadeAnimation,
+    child: SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildWelcomeSection(),
+              const SizedBox(height: 24),
+              _buildCountdownTimer(),
+              const SizedBox(height: 24),
+              _buildLearningPathSection(),
+              const SizedBox(height: 32), // Add spacing
+              _buildProgressIndicator(),
+              const SizedBox(height: 20), // Bottom padding
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   /// Builds the welcome section with animated text
   Widget _buildWelcomeSection() {
@@ -200,60 +260,126 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   /// Builds the learning path section with animations
   Widget _buildLearningPathSection() {
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (error.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                error,
+                style: GoogleFonts.poppins(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Your Learning Path",
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            "$completedSubtopics/$totalSubtopics completed",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: primaryColor,
-              fontWeight: FontWeight.w500,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Your Learning Path",
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "$completedSubtopics/$totalSubtopics",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         SizedBox(
           height: 320,
-          child: AnimationLimiter(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: learningPath.keys.length,
-              itemBuilder: (context, index) {
-                String topic = learningPath.keys.elementAt(index);
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 500),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
-                    child: FadeInAnimation(
-                      child: _buildTopicCard(topic),
-                    ),
+          child: topics.isEmpty 
+              ? _buildEmptyState()
+              : AnimationLimiter(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: topics.length,
+                    itemBuilder: (context, index) {
+                      final topic = topics[index];
+                      final subtopics = List<String>.from(topic['subtopics'] ?? []);
+                      
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 500),
+                        child: SlideAnimation(
+                          verticalOffset: 50.0,
+                          child: FadeInAnimation(
+                            child: _buildTopicCard(
+                              topic['name'],
+                              subtopics,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
+                ),
         ),
       ],
     );
   }
 
-  /// Builds the bottom navigation bar with fixed label issue
+  /// Builds empty state widget
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.school_outlined,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No learning path available",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the bottom navigation bar
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
@@ -300,9 +426,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               label: 'Learn',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.work_outline),
-              activeIcon: Icon(Icons.work),
-              label: 'Practice',
+              icon: Icon(Icons.chat_bubble_outline_rounded),
+              activeIcon: Icon(Icons.chat_bubble_outlined),
+              label: 'chat',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.groups_outlined),
@@ -347,6 +473,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   /// Builds the countdown timer display
   Widget _buildCountdownTimer() {
+    final int days = estimatedDays;
+    final int hours = widget.hoursPerDay ?? 0;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -370,7 +499,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, color: Colors.white, size: 24),
+              const Icon(Icons.timer_outlined, color: Colors.white, size: 24),
               const SizedBox(width: 8),
               Text(
                 "Course deadline",
@@ -388,9 +517,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             children: [
               _buildTimeUnit("$days", "days"),
               _buildTimeSeparator(),
-              _buildTimeUnit("$hours", "hours"),
-              _buildTimeSeparator(),
-              _buildTimeUnit("$minutes", "mins"),
+              _buildTimeUnit("$hours", "hours/day"),
             ],
           ),
         ],
@@ -442,10 +569,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   /// Builds a topic card with expansion functionality
-  Widget _buildTopicCard(String topic) {
-    List<String> subtopics = learningPath[topic]!;
-    int completedCount = completedTopics[topic]?.length ?? 0;
-    double topicProgress = subtopics.isEmpty ? 0 : completedCount / subtopics.length;
+  Widget _buildTopicCard(String topic, List<String> subtopics) {
+    // Determine completion count for this topic
+    final completedCount = completedTopics[topic]?.length ?? 0;
+    final topicProgress = subtopics.isEmpty ? 0.0 : completedCount / subtopics.length;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -474,6 +601,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,6 +615,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       backgroundColor: Colors.grey[200],
                       valueColor: AlwaysStoppedAnimation<Color>(secondaryColor),
                       borderRadius: BorderRadius.circular(4),
+                      minHeight: 6,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -508,16 +637,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               shape: BoxShape.circle,
             ),
             child: Icon(
-              topic.contains('Flutter') 
-                  ? Icons.dashboard_customize_outlined 
-                  : Icons.psychology_outlined,
+              _getTopicIcon(topic),
               color: secondaryColor,
             ),
           ),
           iconColor: primaryColor,
           collapsedIconColor: Colors.grey[500],
           children: subtopics.map((subtopic) {
-            bool isCompleted = completedTopics[topic]?.contains(subtopic) ?? false;
+            final bool isCompleted = completedTopics[topic]?.contains(subtopic) ?? false;
+            
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               color: isCompleted ? Colors.green.withOpacity(0.05) : Colors.transparent,
@@ -556,6 +684,27 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
+  /// Returns appropriate icon based on topic name
+  IconData _getTopicIcon(String topic) {
+    final topicLower = topic.toLowerCase();
+    
+    if (topicLower.contains('flutter') || topicLower.contains('ui') || topicLower.contains('front')) {
+      return Icons.dashboard_customize_outlined;
+    } else if (topicLower.contains('machine') || topicLower.contains('ai') || topicLower.contains('data')) {
+      return Icons.psychology_outlined;
+    } else if (topicLower.contains('basic') || topicLower.contains('intro') || topicLower.contains('concept')) {
+      return Icons.lightbulb_outline;
+    } else if (topicLower.contains('advanced') || topicLower.contains('expert')) {
+      return Icons.architecture_outlined;
+    } else if (topicLower.contains('backend') || topicLower.contains('server') || topicLower.contains('database')) {
+      return Icons.storage_outlined;
+    } else if (topicLower.contains('project') || topicLower.contains('build')) {
+      return Icons.build_outlined;
+    }
+    
+    return Icons.code_outlined;
+  }
+
   /// Builds the circular progress indicator with animation
   Widget _buildProgressIndicator() {
     return TweenAnimationBuilder<double>(
@@ -565,6 +714,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       builder: (context, animatedProgress, child) {
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
+              margin: const EdgeInsets.only(top: 20), // Add top margin
           child: Center(
             child: Column(
               children: [
@@ -600,7 +750,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   footer: Padding(
                     padding: const EdgeInsets.only(top: 16.0),
                     child: Text(
-                      "Keep going, you're doing great!",
+                      "${learningData?['skill'] ?? widget.skill ?? 'Skill'} Mastery",
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,

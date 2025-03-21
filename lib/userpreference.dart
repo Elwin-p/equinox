@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'leaner.dart';
+import 'learner.dart';
 import 'hirer.dart';
 
 class UserPreferenceScreen extends StatefulWidget {

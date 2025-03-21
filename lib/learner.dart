@@ -1,3 +1,5 @@
+//this is learner file
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -6,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'homepage.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Add for anonymous auth
 
 class LearnerScreen extends StatefulWidget {
   const LearnerScreen({Key? key}) : super(key: key);
@@ -38,7 +41,6 @@ class _LearnerScreenState extends State<LearnerScreen> {
   List<String> _pursuingOptions = [];
   
   // Selected items
-  
   List<String> _selectedInterests = [];
   List<String> _selectedLearningGoals = [];
   Map<String, double> _skillRatings = {};
@@ -57,7 +59,6 @@ class _LearnerScreenState extends State<LearnerScreen> {
     'UI/UX Design'
   ];
   
-  
   List<String> _learningGoals = [
     'AI & ML', 
     'Web Dev', 
@@ -72,6 +73,16 @@ class _LearnerScreenState extends State<LearnerScreen> {
   void initState() {
     super.initState();
     _loadPursuingOptions();
+    _signInAnonymously(); // Add anonymous sign-in
+  }
+
+  /// Signs in user anonymously
+  Future<void> _signInAnonymously() async {
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+    } catch (e) {
+      debugPrint('Error signing in anonymously: $e');
+    }
   }
 
   /// Loads pursuing options from JSON asset
@@ -84,6 +95,16 @@ class _LearnerScreenState extends State<LearnerScreen> {
       });
     } catch (e) {
       debugPrint('Error loading pursuing options: $e');
+      // Set default options if JSON loading fails
+      setState(() {
+        _pursuingOptions = [
+          'Computer Science',
+          'Information Technology',
+          'Software Engineering',
+          'Data Science',
+          'Other'
+        ];
+      });
     }
   }
 
@@ -104,6 +125,7 @@ class _LearnerScreenState extends State<LearnerScreen> {
         _selectedInterests.isEmpty || 
         _selectedLearningGoals.isEmpty || 
         _usernameController.text.isEmpty ||
+        _skillsController.text.isEmpty ||
         _selectedLevel == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -134,9 +156,15 @@ class _LearnerScreenState extends State<LearnerScreen> {
       // Save username locally
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_name', _usernameController.text);
+      await prefs.setString('selected_skill', _skillsController.text);
+      await prefs.setInt('free_time', _freeTime.toInt());
+      await prefs.setString('level', _selectedLevel!);
     
+      // Get current user ID
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+      
       // Save all data to Firestore
-      await FirebaseFirestore.instance.collection('learners').add({
+      await FirebaseFirestore.instance.collection('learners').doc(userId).set({
         'name': _usernameController.text,
         'pursuing': _selectedPursuing,
         'interests': _selectedInterests,
@@ -151,9 +179,16 @@ class _LearnerScreenState extends State<LearnerScreen> {
 
       // Close loading dialog and navigate to home
       Navigator.of(context).pop();
+      
       Navigator.pushReplacement(
         context, 
-        MaterialPageRoute(builder: (context) => const HomePage())
+        MaterialPageRoute(
+          builder: (context) => HomePage(
+            skill: _skillsController.text,
+            hoursPerDay: _freeTime.toInt(),
+            level: _selectedLevel,
+          )
+        )
       );
     } catch (e) {
       // Close loading dialog and show error
@@ -436,7 +471,6 @@ class _LearnerScreenState extends State<LearnerScreen> {
   }
 
   /// Builds the free time slider
-/// Builds the free time slider
   Widget _buildFreeTimeSlider() {
     return Column(
       children: [
@@ -507,48 +541,43 @@ class _LearnerScreenState extends State<LearnerScreen> {
   }
 
   /// Builds dropdown for learning level
-
-
-
-// Then update the dropdown method:
-Widget _buildLevelDropdown() {
-  print("Available levels: $_levels"); // Debug print
-  return DropdownButtonFormField<String>(
-    value: _selectedLevel,
-    items: _levels.map((level) {
-      return DropdownMenuItem<String>(
-        value: level,
-        child: Text(
-          level,
-          style: GoogleFonts.poppins(color: Colors.black),
-          
+  Widget _buildLevelDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedLevel,
+      items: _levels.map((level) {
+        return DropdownMenuItem<String>(
+          value: level,
+          child: Text(
+            level,
+            style: GoogleFonts.poppins(color: Colors.black),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedLevel = value;
+        });
+      },
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
-      );
-    }).toList(),
-    onChanged: (value) {
-      setState(() {
-        _selectedLevel = value;
-      });
-    },
-    decoration: InputDecoration(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: _primaryColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        hintText: 'Select level',
+        hintStyle: GoogleFonts.poppins(color: Colors.grey),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: _primaryColor, width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintText: 'Select level',
-      hintStyle: GoogleFonts.poppins(color: Colors.grey),
-    ),
-    style: GoogleFonts.poppins(),
-    dropdownColor: Colors.white,
-    icon: Icon(Icons.arrow_drop_down, color: _primaryColor),
-    isExpanded: true,
-  );
-}
+      style: GoogleFonts.poppins(),
+      dropdownColor: Colors.white,
+      icon: Icon(Icons.arrow_drop_down, color: _primaryColor),
+      isExpanded: true,
+    );
+  }
+
   /// Builds the continue button
   Widget _buildContinueButton() {
     return SizedBox(
