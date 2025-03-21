@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'signinpage.dart'; // Import SignInPage
+import 'package:google_fonts/google_fonts.dart';
+import 'signinpage.dart';
 import 'userpreference.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -17,158 +18,194 @@ class _SignUpPageState extends State<SignUpPage> {
   final List<String> _countries = [
     'United States', 'United Kingdom', 'Canada', 'India', 'Australia',
     'Germany', 'France', 'Japan', 'China', 'Brazil', 'South Africa'
-  ]; // Example countries
+  ];
 
   void _signUpAnonymously() async {
     try {
       await FirebaseAuth.instance.signInAnonymously();
-      Navigator.pushReplacement(
+      // Using pushAndRemoveUntil for more efficient navigation
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => UserPreferenceScreen()),
+        (route) => false,
       );
     } catch (e) {
-      print('Anonymous sign-in failed: $e');
+      // Professional error handling with SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing up: ${e.toString()}')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7), // Light Neutral background
-      appBar: AppBar(
-        title: const Text(
-          'Sign Up',
-          style: TextStyle(
-            color: Color(0xFF3D59AB),
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-          ), // Deep Blue heading 
+    // Define reusable text styles
+    final headingStyle = GoogleFonts.poppins(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      color: const Color(0xFF3D59AB),
+    );
+    
+    final subheadingStyle = GoogleFonts.poppins(
+      fontSize: 22,
+      fontWeight: FontWeight.w500,
+      color: const Color(0xFF3D59AB),
+    );
+    
+    final bodyTextStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: const Color(0xFF333333),
+    );
+    
+    final buttonTextStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    );
+
+    // Reusable input decoration
+    InputDecoration getInputDecoration(String label) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: const Color(0xFF3D59AB)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
         ),
-        backgroundColor: const Color(0xFFF7F7F7),
-        iconTheme: const IconThemeData(color: Color(0xFF333333)), // Dark Charcoal
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF3D59AB), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        filled: true,
+        fillColor: Colors.white,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA), // Lighter background for professional look
+      appBar: AppBar(
+        elevation: 0, // Remove shadow for cleaner look
+        title: Text('Sign Up', style: headingStyle),
+        backgroundColor: const Color(0xFFFAFAFA),
+        iconTheme: const IconThemeData(color: Color(0xFF333333)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 90),
-                const Text(
-                  'Create an Account',
-                  style: TextStyle(
-                    color: Color(0xFF3D59AB), // Deep Blue
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40), // Reduced space for efficiency
+                  
+                  Text('Create an Account', style: subheadingStyle),
+                  const SizedBox(height: 30),
+                  
+                  // Email Input Field
+                  TextFormField(
+                    decoration: getInputDecoration('Email'),
+                    style: bodyTextStyle,
                   ),
-                ),
-                const SizedBox(height: 30),
-                // Email Input Field
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Password Input Field with Visibility Toggle
-                TextFormField(
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: const TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        color: const Color(0xFF3D59AB), // Deep Blue
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Phone Number Input Field
-                TextFormField(
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Phone Number',
-                    labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Country Dropdown
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Select Country',
-                    labelStyle: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0)),
-                  ),
-                  value: _selectedCountry,
-                  items: _countries.map((country) {
-                    return DropdownMenuItem(
-                      value: country,
-                      child: Text(country),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCountry = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 30),
-                // Sign Up Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _signUpAnonymously,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7F50), // Coral Orange button
-                      foregroundColor: Colors.white, // Text color
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 20),
+                  
+                  // Password Input Field with Visibility Toggle
+                  TextFormField(
+                    obscureText: _obscurePassword,
+                    decoration: getInputDecoration('Password').copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: const Color(0xFF3D59AB),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                     ),
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: bodyTextStyle,
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Phone Number Input Field
+                  TextFormField(
+                    keyboardType: TextInputType.phone,
+                    decoration: getInputDecoration('Phone Number'),
+                    style: bodyTextStyle,
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Country Dropdown with improved styling
+                  DropdownButtonFormField<String>(
+                    decoration: getInputDecoration('Select Country'),
+                    value: _selectedCountry,
+                    style: bodyTextStyle,
+                    dropdownColor: Colors.white,
+                    items: _countries.map((country) {
+                      return DropdownMenuItem(
+                        value: country,
+                        child: Text(country, style: bodyTextStyle),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCountry = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  // Sign Up Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _signUpAnonymously,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3D59AB), // Professional blue color
+                        foregroundColor: Colors.white,
+                        elevation: 0, // No shadow for clean look
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text('Sign Up', style: buttonTextStyle),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                // Already have an account? Sign In
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Already have an account?",
-                      style: TextStyle(color: Color(0xFF333333)), // Dark Charcoal
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SignInPage()),
-                        );
-                      },
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(color: Color(0xFF20B2AA)), // Teal
+                  const SizedBox(height: 24),
+                  
+                  // Already have an account? Sign In
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Already have an account?",
+                        style: bodyTextStyle,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SignInPage()),
+                          );
+                        },
+                        child: Text(
+                          'Sign In',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFF3D59AB),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),

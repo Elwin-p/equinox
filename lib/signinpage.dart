@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'homepage.dart'; // Redirecting to HomePage after sign-in
+import 'package:google_fonts/google_fonts.dart'; // Add this package for Poppins font
+import 'homepage.dart';
 import 'signuppage.dart';
 
 class SignInPage extends StatelessWidget {
@@ -9,142 +10,178 @@ class SignInPage extends StatelessWidget {
   Future<void> _signInAnonymously(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signInAnonymously();
-      Navigator.pushReplacement(
+      // Use pushAndRemoveUntil for more efficient navigation
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) =>  HomePage()),
+        MaterialPageRoute(builder: (context) => HomePage()),
+        (route) => false,
       );
     } catch (e) {
-      print("Error signing in anonymously: $e");
+      // More professional error handling with SnackBar instead of print
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing in: ${e.toString()}')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Define text styles once for reuse - more efficient
+    final headingStyle = GoogleFonts.poppins(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      color: const Color(0xFF3D59AB),
+    );
+    
+    final subheadingStyle = GoogleFonts.poppins(
+      fontSize: 22,
+      fontWeight: FontWeight.w500,
+      color: const Color(0xFF3D59AB),
+    );
+    
+    final bodyTextStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: const Color(0xFF333333),
+    );
+    
+    final buttonTextStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Colors.white,
+    );
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7), // Light Neutral background
+      backgroundColor: const Color(0xFFFAFAFA), // Slightly lighter background for professional look
       appBar: AppBar(
-        title: const Text(
-          'Sign In',
-          style: TextStyle(
-            color: Color(0xFF3D59AB),
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-          ), // Deep Blue heading
-        ),
-        backgroundColor: const Color(0xFFF7F7F7),
-        iconTheme: const IconThemeData(color: Color(0xFF333333)), // Dark Charcoal
+        elevation: 0, // Remove shadow for modern, clean look
+        title: Text('Sign In', style: headingStyle),
+        backgroundColor: const Color(0xFFFAFAFA),
+        iconTheme: const IconThemeData(color: Color(0xFF333333)),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 160), // Adds space from the top
-              
-              const Text(
-                'Welcome Back!',
-                style: TextStyle(
-                  color: Color(0xFF3D59AB), // Deep Blue
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              const Text(
-                'Sign in to continue',
-                style: TextStyle(
-                  color: Color(0xFF333333), // Dark Charcoal text
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Dummy Email Input Field
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  labelStyle: const TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Dummy Password Input Field
-              TextFormField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  labelStyle: const TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Forgot Password (Non-functional for MVP)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Color(0xFF3D59AB)), // Deep Blue
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Sign In Button (Triggers Anonymous Sign-In)
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => _signInAnonymously(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7F50), // Coral Orange button
-                    foregroundColor: Colors.white, // Text color
-                    shape: RoundedRectangleBorder(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 60), // Reduced spacing for efficiency
+                
+                Text('Welcome Back', style: subheadingStyle),
+                const SizedBox(height: 8),
+                
+                Text('Sign in to your account to continue', style: bodyTextStyle),
+                const SizedBox(height: 40),
+                
+                // Email Field with improved decoration
+                TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: GoogleFonts.poppins(color: const Color(0xFF3D59AB)),
+                    enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF3D59AB), width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: bodyTextStyle,
+                ),
+                const SizedBox(height: 20),
+                
+                // Password Field with improved decoration
+                TextFormField(
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: GoogleFonts.poppins(color: const Color(0xFF3D59AB)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF3D59AB), width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  style: bodyTextStyle,
+                ),
+                const SizedBox(height: 12),
+                
+                // Forgot Password link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(50, 30),
+                    ),
+                    child: Text(
+                      'Forgot Password?',
+                      style: GoogleFonts.poppins(
+                        color: const Color(0xFF3D59AB),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // Sign Up Option (Navigates to SignUpPage)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Don't have an account?",
-                    style: TextStyle(color: Color(0xFF333333)), // Dark Charcoal
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SignUpPage()),
-                      );
-                    },
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(color: Color(0xFF20B2AA)), // Teal
+                const SizedBox(height: 32),
+                
+                // Sign In Button - more professional look
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => _signInAnonymously(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3D59AB), // More professional blue instead of coral
+                      foregroundColor: Colors.white,
+                      elevation: 0, // No shadow for clean look
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                    child: Text('Sign In', style: buttonTextStyle),
                   ),
-                ],
-              ),
-              const SizedBox(height: 30), // Prevents content from being too tight at the bottom
-            ],
+                ),
+                const SizedBox(height: 24),
+                
+                // Sign Up Option
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account?",
+                      style: bodyTextStyle,
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SignUpPage()),
+                        );
+                      },
+                      child: Text(
+                        'Sign Up',
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF3D59AB),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

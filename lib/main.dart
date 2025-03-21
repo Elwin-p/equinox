@@ -5,12 +5,20 @@ import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is ready
-  /*await dotenv.load();
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
+
+ // Load environment variables
+  await dotenv.load(fileName: "./.env");
+  await Firebase.initializeApp(); // Initialize Firebase before using it
+
   String apiKey = dotenv.env['API_KEY'] ?? ''; // Fetch API key safely
-  Gemini.init(apiKey: apiKey);**/
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is ready
-  await Firebase.initializeApp(); // Initialize Firebase
+  if (apiKey.isEmpty) {
+    debugPrint("❌ API Key is missing! Check your .env file.");
+  } else {
+    debugPrint("✅ API Key Loaded Successfully");
+    Gemini.init(apiKey: apiKey);
+  }
+
   runApp(const MyApp());
 }
 
