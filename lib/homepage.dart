@@ -259,101 +259,98 @@ Widget _buildBody() {
   }
 
   /// Builds the learning path section with animations
-  Widget _buildLearningPathSection() {
-    if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+ Widget _buildLearningPathSection() {
+  if (isLoading) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(32.0),
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
 
-    if (error.isNotEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                error,
-                style: GoogleFonts.poppins(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  if (error.isNotEmpty) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
             Text(
-              "Your Learning Path",
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                "$completedSubtopics/$totalSubtopics",
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: primaryColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              error,
+              style: GoogleFonts.poppins(fontSize: 16),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 320,
-          child: topics.isEmpty 
-              ? _buildEmptyState()
-              : AnimationLimiter(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: topics.length,
-                    itemBuilder: (context, index) {
-                      final topic = topics[index];
-                      final subtopics = List<String>.from(topic['subtopics'] ?? []);
-                      
-                      return AnimationConfiguration.staggeredList(
-                        position: index,
-                        duration: const Duration(milliseconds: 500),
-                        child: SlideAnimation(
-                          verticalOffset: 50.0,
-                          child: FadeInAnimation(
-                            child: _buildTopicCard(
-                              topic['name'],
-                              subtopics,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-        ),
-      ],
+      ),
     );
   }
+
+  final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
+  
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Your Learning Path",
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "$completedSubtopics/$totalSubtopics",
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      topics.isEmpty 
+        ? _buildEmptyState()
+        : AnimationLimiter(
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: topics.length,
+              itemBuilder: (context, index) {
+                final topic = topics[index];
+                final subtopics = List<String>.from(topic['subtopics'] ?? []);
+                
+                return AnimationConfiguration.staggeredList(
+                  position: index,
+                  duration: const Duration(milliseconds: 500),
+                  child: SlideAnimation(
+                    verticalOffset: 50.0,
+                    child: FadeInAnimation(
+                      child: _buildTopicCard(
+                        topic['name'],
+                        subtopics,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+    ],
+  );
+}
 
   /// Builds empty state widget
   Widget _buildEmptyState() {

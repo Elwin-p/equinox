@@ -1,5 +1,3 @@
-//this is gemini's services
-
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -20,7 +18,7 @@ class GeminiService {
     final prompt = '''
     Generate a structured learning path for $skill at $level level for someone who can dedicate $hoursPerDay hours per day.
     The path should take approximately $estimatedDays days to complete.
-    Return the response ONLY in the following JSON format. Ensure the response is valid JSON with no extra text:
+    Return the response ONLY in the following JSON format with no additional text or explanation:
     {
       "skill": "$skill",
       "level": "$level",
@@ -28,7 +26,7 @@ class GeminiService {
       "topics": [
         {
           "name": "Topic Name",
-          "subtopics": ["Subtopic 1", "Subtopic 2", ...]
+          "subtopics": ["Subtopic 1", "Subtopic 2"]
         }
       ]
     }
@@ -40,42 +38,84 @@ class GeminiService {
       );
 
       if (response == null || response.content == null) {
+        debugPrint("Null response from Gemini");
         throw Exception("Invalid response from Gemini");
       }
 
-      // Print the raw response to see what we're getting
-    // Print the actual text content from the response
-    if (response.content?.parts != null && response.content!.parts!.isNotEmpty) {
+      // Check if we have parts in the response
+      if (response.content?.parts == null || response.content!.parts!.isEmpty) {
+        debugPrint("No parts in Gemini response");
+        throw Exception("No content parts in Gemini response");
+      }
+
+      // IMPORTANT FIX: Correctly access the text content from TextPart
       final part = response.content!.parts!.first;
-      print("Part type: ${part.runtimeType}");
-      print("Part toString: ${part.toString()}");
-      // Print all properties/methods on part object
-      print("Part properties: ${part.toString()}");
-    }
-    
-    final jsonString = response.content?.parts?.first.toString().trim() ?? '';
-    
-    // Print the extracted JSON string
-    print("JSON string: $jsonString");
+      String responseText = "";
       
-      if (jsonString.isEmpty) {
+      // Check if the part is a TextPart and extract text correctly
+      if (part is TextPart) {
+        responseText = part.text.trim();
+      } else {
+        // If it's not a TextPart, try a fallback approach
+        responseText = part.toString().trim();
+      }
+      
+      debugPrint("Raw Gemini response text: $responseText");
+      
+      if (responseText.isEmpty) {
+        debugPrint("Empty response text from Gemini");
         throw Exception("Empty response from Gemini");
       }
 
-      // Extract JSON if it's wrapped in backticks
-      String cleanedJson = jsonString;
-      if (jsonString.contains('```json')) {
-        cleanedJson = jsonString.split('```json')[1].split('```')[0].trim();
-      } else if (jsonString.contains('```')) {
-        cleanedJson = jsonString.split('```')[1].split('```')[0].trim();
+      // Try multiple approaches to extract valid JSON
+      String jsonString = responseText;
+      
+      // First approach: Extract from code blocks if present
+      if (responseText.contains('```json')) {
+        jsonString = responseText.split('```json')[1].split('```')[0].trim();
+        debugPrint("Extracted from ```json block: $jsonString");
+      } else if (responseText.contains('```')) {
+        jsonString = responseText.split('```')[1].split('```')[0].trim();
+        debugPrint("Extracted from ``` block: $jsonString");
+      }
+      
+      // Second approach: Try to find JSON object by its beginning and ending
+      if (jsonString.contains('{') && jsonString.contains('}')) {
+        final startIndex = jsonString.indexOf('{');
+        final endIndex = jsonString.lastIndexOf('}') + 1;
+        if (startIndex >= 0 && endIndex > startIndex) {
+          jsonString = jsonString.substring(startIndex, endIndex);
+          debugPrint("Extracted using braces: $jsonString");
+        }
       }
 
       try {
-        final jsonData = jsonDecode(cleanedJson);
+        // Try to parse the JSON
+        final jsonData = jsonDecode(jsonString);
+        debugPrint("Successfully parsed JSON");
         return jsonData;
-      } on FormatException catch(e) {
-        debugPrint('Error decoding JSON: $e, original response: $jsonString');
-        throw Exception("Invalid JSON response from Gemini");
+      } catch (e) {
+        debugPrint('Error decoding JSON: $e');
+        debugPrint('JSON string that failed: $jsonString');
+        
+        // One last attempt: clean any non-JSON characters
+        try {
+          // Only attempt the substring if there are curly braces
+          if (jsonString.contains('{') && jsonString.contains('}')) {
+            // Remove any characters before { and after }
+            final cleanedJson = jsonString.substring(
+              jsonString.indexOf('{'), 
+              jsonString.lastIndexOf('}') + 1
+            );
+            debugPrint("Final attempt with cleaned JSON: $cleanedJson");
+            return jsonDecode(cleanedJson);
+          } else {
+            throw Exception("No JSON object found in response");
+          }
+        } catch (e) {
+          debugPrint('Final attempt failed: $e');
+          throw Exception("Invalid JSON response from Gemini");
+        }
       }
     } catch (e) {
       debugPrint('Error generating learning path: $e');
