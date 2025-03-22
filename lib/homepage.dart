@@ -1,4 +1,4 @@
-//this is home page
+//this is homepage
 
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'gemini.dart';
+import 'bookborrow.dart'; // Import the bookborrow.dart file
 
 class HomePage extends StatefulWidget {
   final String? skill;
@@ -155,6 +156,22 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     });
   }
 
+  /// Handle navigation when bottom nav items are tapped
+  void _onNavigationItemTapped(int index) {
+    if (index == 3) {
+      // Library icon - navigate to BookBorrow page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const BookBorrowMap()),
+      );
+    } else {
+      // For other tabs, just update the index
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,32 +209,32 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   /// Builds the main body content with animations
-Widget _buildBody() {
-  return FadeTransition(
-    opacity: _fadeAnimation,
-    child: SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeSection(),
-              const SizedBox(height: 24),
-              _buildCountdownTimer(),
-              const SizedBox(height: 24),
-              _buildLearningPathSection(),
-              const SizedBox(height: 32), // Add spacing
-              _buildProgressIndicator(),
-              const SizedBox(height: 20), // Bottom padding
-            ],
+  Widget _buildBody() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeSection(),
+                const SizedBox(height: 24),
+                _buildCountdownTimer(),
+                const SizedBox(height: 24),
+                _buildLearningPathSection(),
+                const SizedBox(height: 32), // Add spacing
+                _buildProgressIndicator(),
+                const SizedBox(height: 20), // Bottom padding
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   /// Builds the welcome section with animated text
   Widget _buildWelcomeSection() {
@@ -259,98 +276,98 @@ Widget _buildBody() {
   }
 
   /// Builds the learning path section with animations
- Widget _buildLearningPathSection() {
-  if (isLoading) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32.0),
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
+  Widget _buildLearningPathSection() {
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-  if (error.isNotEmpty) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    if (error.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                error,
+                style: GoogleFonts.poppins(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
             Text(
-              error,
-              style: GoogleFonts.poppins(fontSize: 16),
-              textAlign: TextAlign.center,
+              "Your Learning Path",
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "$completedSubtopics/$totalSubtopics",
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
-  
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Your Learning Path",
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "$completedSubtopics/$totalSubtopics",
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: primaryColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      topics.isEmpty 
-        ? _buildEmptyState()
-        : AnimationLimiter(
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: topics.length,
-              itemBuilder: (context, index) {
-                final topic = topics[index];
-                final subtopics = List<String>.from(topic['subtopics'] ?? []);
-                
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 500),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
-                    child: FadeInAnimation(
-                      child: _buildTopicCard(
-                        topic['name'],
-                        subtopics,
+        const SizedBox(height: 16),
+        topics.isEmpty 
+          ? _buildEmptyState()
+          : AnimationLimiter(
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: topics.length,
+                itemBuilder: (context, index) {
+                  final topic = topics[index];
+                  final subtopics = List<String>.from(topic['subtopics'] ?? []);
+                  
+                  return AnimationConfiguration.staggeredList(
+                    position: index,
+                    duration: const Duration(milliseconds: 500),
+                    child: SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(
+                        child: _buildTopicCard(
+                          topic['name'],
+                          subtopics,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   /// Builds empty state widget
   Widget _buildEmptyState() {
@@ -362,6 +379,7 @@ Widget _buildBody() {
             Icons.school_outlined,
             size: 64,
             color: Colors.grey[400],
+            
           ),
           const SizedBox(height: 16),
           Text(
@@ -400,11 +418,7 @@ Widget _buildBody() {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
+          onTap: _onNavigationItemTapped, // Use the new navigation handler
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: primaryColor,

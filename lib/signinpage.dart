@@ -8,21 +8,35 @@ class SignInPage extends StatelessWidget {
   const SignInPage({super.key});
 
   Future<void> _signInAnonymously(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signInAnonymously();
-      // Use pushAndRemoveUntil for more efficient navigation
+  try {
+    final auth = FirebaseAuth.instance;
+    
+    // Sign out the existing user (if any) to generate a new anonymous ID
+    if (auth.currentUser != null) {
+      await auth.signOut();
+    }
+
+    // Sign in anonymously again
+    await auth.signInAnonymously();
+
+    // Navigate to HomePage and remove all previous routes
+    if (context.mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => const HomePage()), // Added const for better performance
         (route) => false,
       );
-    } catch (e) {
-      // More professional error handling with SnackBar instead of print
+    }
+  } catch (e) {
+    // Show an error message in a SnackBar
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error signing in: ${e.toString()}')),
       );
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -21,21 +21,38 @@ class _SignUpPageState extends State<SignUpPage> {
   ];
 
   void _signUpAnonymously() async {
-    try {
-      await FirebaseAuth.instance.signInAnonymously();
+  try {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    
+    // Check if there's an existing user and sign them out
+    if (auth.currentUser != null) {
+      await auth.signOut();
+    }
+    
+    // Sign in anonymously to generate a new ID
+    await auth.signInAnonymously();
+    
+    // Verify we have a user after signing in
+    if (auth.currentUser != null && context.mounted) {
       // Using pushAndRemoveUntil for more efficient navigation
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => UserPreferenceScreen()),
+        MaterialPageRoute(builder: (context) => const UserPreferenceScreen()),
         (route) => false,
       );
-    } catch (e) {
-      // Professional error handling with SnackBar
+    } else {
+      throw Exception('Anonymous sign-in failed to create a new user');
+    }
+  } catch (e) {
+    // Professional error handling with SnackBar
+    if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error signing up: ${e.toString()}')),
       );
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
