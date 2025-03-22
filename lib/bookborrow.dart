@@ -6,6 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geocoding/geocoding.dart';
+import 'homepage.dart';
+import 'community.dart';
+import 'chat.dart';
+
 
 class BookBorrowMap extends StatefulWidget {
   const BookBorrowMap({Key? key}) : super(key: key);
@@ -433,9 +437,29 @@ class _BookBorrowMapState extends State<BookBorrowMap> {
   }
 
   void _onNavigationItemTapped(int index) {
-    if (index != 3) {
-      Navigator.pop(context, index);
+    setState(() {
+      _currentIndex = index;
+    });
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } 
+    else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ChatPage()),
+      );
     }
+    else if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const CommunityForum()),
+      );
+    }
+    // Index 3 (Library) is already here, so no navigation
+    // Index 1 (Chat) is a placeholder, so no action
   }
 
   @override

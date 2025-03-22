@@ -1,13 +1,15 @@
-//this is homepage
-
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Optional: If using Firebase Auth
 import 'gemini.dart';
-import 'bookborrow.dart'; // Import the bookborrow.dart file
+import 'bookborrow.dart';
+import 'community.dart';
+import 'chat.dart';
 
 class HomePage extends StatefulWidget {
   final String? skill;
@@ -15,10 +17,10 @@ class HomePage extends StatefulWidget {
   final String? level;
 
   const HomePage({
-    Key? key, 
-    this.skill, 
-    this.hoursPerDay, 
-    this.level
+    Key? key,
+    this.skill,
+    this.hoursPerDay,
+    this.level,
   }) : super(key: key);
 
   @override
@@ -27,61 +29,62 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   // User properties
-  String userName = "User"; // Default name
+  String userName = "User";
   double progress = 0.0;
   int completedSubtopics = 0;
-  int _currentIndex = 0; // For bottom navigation
+  int _currentIndex = 0;
   Map<String, dynamic>? learningData;
   bool isLoading = true;
   String error = '';
   int estimatedDays = 0;
   int totalSubtopics = 0;
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   // Theme colors
   final Color primaryColor = const Color(0xFF2D31FA);
   final Color secondaryColor = const Color(0xFF5D8BF4);
   final Color accentColor = const Color(0xFFFF8C32);
   final Color bgColor = const Color(0xFFF9F9F9);
-  
+
   // Completed topics tracking
   final Map<String, Set<String>> completedTopics = {};
+
+  // Firestore instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controller
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
+
     // Load user data and learning path
     _initializeData();
-  }
-
-  /// Initialize all required data
-  Future<void> _initializeData() async {
-    await loadUserName();
-    await _loadLearningPath();
-    _animationController.forward();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  /// Initialize all required data
+  Future<void> _initializeData() async {
+    userId = FirebaseAuth.instance.currentUser?.uid ?? 'default_user';
+    await loadUserName();
+    await _loadLearningPathFromFirestore();
+    _animationController.forward();
   }
 
   /// Loads the user name from SharedPreferences
@@ -96,54 +99,127 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  /// Loads learning path data from Gemini service
-  Future<void> _loadLearningPath() async {
-    if (widget.skill == null || widget.hoursPerDay == null || widget.level == null) {
-      setState(() {
-        error = 'Missing required parameters';
-        isLoading = false;
-      });
-      return;
-    }
-
+  /// Loads learning path from Firestore or generates it if not present
+  Future<void> _loadLearningPathFromFirestore() async {
     try {
-      final data = await GeminiService.getLearningPath(
-        widget.skill!,
-        widget.hoursPerDay!,
-        widget.level!,
-      );
+      // If parameters are provided, use them to fetch or generate the learning path
+      if (widget.skill != null && widget.hoursPerDay != null && widget.level != null) {
+        DocumentSnapshot doc = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('learning_paths')
+            .doc('${widget.skill}_${widget.level}')
+            .get();
 
-      if (mounted) {
-        setState(() {
-          learningData = data;
-          estimatedDays = data['estimatedDays'] ?? 30;
-          
-          // Calculate total subtopics
-          totalSubtopics = 0;
-          final topics = List<Map<String, dynamic>>.from(data['topics'] ?? []);
-          for (var topic in topics) {
-            final subtopics = List<String>.from(topic['subtopics'] ?? []);
-            totalSubtopics += subtopics.length;
-          }
-          
-          isLoading = false;
-        });
+        if (doc.exists && doc.data() != null) {
+          // Load from Firestore
+          final data = doc.data() as Map<String, dynamic>;
+          setState(() {
+            learningData = data['roadmap'];
+            completedTopics.addAll(
+                (data['completedTopics'] as Map<String, dynamic>?)?.map(
+                      (key, value) => MapEntry(key, Set<String>.from(value)),
+                    ) ??
+                    {});
+            estimatedDays = learningData?['estimatedDays'] ?? 30;
+            totalSubtopics = 0;
+            completedSubtopics = 0;
+            final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
+            for (var topic in topics) {
+              final subtopics = List<String>.from(topic['subtopics'] ?? []);
+              totalSubtopics += subtopics.length;
+              completedSubtopics += completedTopics[topic['name']]?.length ?? 0;
+            }
+            progress = totalSubtopics > 0 ? completedSubtopics / totalSubtopics : 0;
+            isLoading = false;
+          });
+        } else {
+          // Generate new roadmap and save to Firestore
+          final data = await GeminiService.getLearningPath(
+            widget.skill!,
+            widget.hoursPerDay!,
+            widget.level!,
+          );
+          await _saveLearningPathToFirestore(data);
+          setState(() {
+            learningData = data;
+            estimatedDays = data['estimatedDays'] ?? 30;
+            totalSubtopics = 0;
+            final topics = List<Map<String, dynamic>>.from(data['topics'] ?? []);
+            for (var topic in topics) {
+              totalSubtopics += List<String>.from(topic['subtopics'] ?? []).length;
+            }
+            isLoading = false;
+          });
+        }
+      } else {
+        // Fallback: Load the most recent learning path from Firestore if parameters are missing
+        QuerySnapshot snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('learning_paths')
+            .orderBy('timestamp', descending: true)
+            .limit(1)
+            .get();
+
+        if (snapshot.docs.isNotEmpty) {
+          final data = snapshot.docs.first.data() as Map<String, dynamic>;
+          setState(() {
+            learningData = data['roadmap'];
+            completedTopics.addAll(
+                (data['completedTopics'] as Map<String, dynamic>?)?.map(
+                      (key, value) => MapEntry(key, Set<String>.from(value)),
+                    ) ??
+                    {});
+            estimatedDays = learningData?['estimatedDays'] ?? 30;
+            totalSubtopics = 0;
+            completedSubtopics = 0;
+            final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
+            for (var topic in topics) {
+              final subtopics = List<String>.from(topic['subtopics'] ?? []);
+              totalSubtopics += subtopics.length;
+              completedSubtopics += completedTopics[topic['name']]?.length ?? 0;
+            }
+            progress = totalSubtopics > 0 ? completedSubtopics / totalSubtopics : 0;
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            error = 'No previous learning path found. Please provide skill, hours, and level.';
+            isLoading = false;
+          });
+        }
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          error = 'Failed to load learning path: $e';
-          isLoading = false;
-        });
-      }
+      setState(() {
+        error = 'Failed to load learning path: $e';
+        isLoading = false;
+      });
     }
   }
 
-  /// Toggles the completion status of a subtopic
+  /// Saves learning path and progress to Firestore
+  Future<void> _saveLearningPathToFirestore(Map<String, dynamic> data) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('learning_paths')
+          .doc('${widget.skill}_${widget.level}')
+          .set({
+        'roadmap': data,
+        'completedTopics': completedTopics.map((key, value) => MapEntry(key, value.toList())),
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error saving to Firestore: $e');
+    }
+  }
+
+  /// Toggles the completion status of a subtopic and updates Firestore
   void toggleSubtopicCompletion(String topic, String subtopic) {
     setState(() {
       completedTopics.putIfAbsent(topic, () => <String>{});
-      
       if (completedTopics[topic]!.contains(subtopic)) {
         completedTopics[topic]!.remove(subtopic);
         completedSubtopics--;
@@ -151,24 +227,43 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         completedTopics[topic]!.add(subtopic);
         completedSubtopics++;
       }
-      
       progress = totalSubtopics > 0 ? completedSubtopics / totalSubtopics : 0;
     });
+    _saveLearningPathToFirestore(learningData!);
   }
 
   /// Handle navigation when bottom nav items are tapped
   void _onNavigationItemTapped(int index) {
-    if (index == 3) {
-      // Library icon - navigate to BookBorrow page
-      Navigator.push(
+    setState(() {
+      _currentIndex = index;
+    });
+    if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ChatPage()),
+      );
+    } else if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const CommunityForum()),
+      );
+    } else if (index == 3) {
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const BookBorrowMap()),
       );
-    } else {
-      // For other tabs, just update the index
-      setState(() {
-        _currentIndex = index;
-      });
+    } else if (index == 0 && _currentIndex != 0) {
+      // Navigate back to HomePage with the current parameters
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(
+            skill: widget.skill,
+            hoursPerDay: widget.hoursPerDay,
+            level: widget.level,
+          ),
+        ),
+      );
     }
   }
 
@@ -187,7 +282,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      automaticallyImplyLeading: false, // This removes the back button
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
           Image.asset('assets/logo.png', height: 40),
@@ -225,9 +320,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 _buildCountdownTimer(),
                 const SizedBox(height: 24),
                 _buildLearningPathSection(),
-                const SizedBox(height: 32), // Add spacing
+                const SizedBox(height: 32),
                 _buildProgressIndicator(),
-                const SizedBox(height: 20), // Bottom padding
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -306,7 +401,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
 
     final topics = List<Map<String, dynamic>>.from(learningData?['topics'] ?? []);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -338,33 +433,33 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ],
         ),
         const SizedBox(height: 16),
-        topics.isEmpty 
-          ? _buildEmptyState()
-          : AnimationLimiter(
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: topics.length,
-                itemBuilder: (context, index) {
-                  final topic = topics[index];
-                  final subtopics = List<String>.from(topic['subtopics'] ?? []);
-                  
-                  return AnimationConfiguration.staggeredList(
-                    position: index,
-                    duration: const Duration(milliseconds: 500),
-                    child: SlideAnimation(
-                      verticalOffset: 50.0,
-                      child: FadeInAnimation(
-                        child: _buildTopicCard(
-                          topic['name'],
-                          subtopics,
+        topics.isEmpty
+            ? _buildEmptyState()
+            : AnimationLimiter(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: topics.length,
+                  itemBuilder: (context, index) {
+                    final topic = topics[index];
+                    final subtopics = List<String>.from(topic['subtopics'] ?? []);
+
+                    return AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 500),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _buildTopicCard(
+                            topic['name'],
+                            subtopics,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
       ],
     );
   }
@@ -379,7 +474,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             Icons.school_outlined,
             size: 64,
             color: Colors.grey[400],
-            
           ),
           const SizedBox(height: 16),
           Text(
@@ -418,7 +512,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: _onNavigationItemTapped, // Use the new navigation handler
+          onTap: _onNavigationItemTapped,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: primaryColor,
@@ -486,7 +580,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   Widget _buildCountdownTimer() {
     final int days = estimatedDays;
     final int hours = widget.hoursPerDay ?? 0;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -581,7 +675,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   /// Builds a topic card with expansion functionality
   Widget _buildTopicCard(String topic, List<String> subtopics) {
-    // Determine completion count for this topic
     final completedCount = completedTopics[topic]?.length ?? 0;
     final topicProgress = subtopics.isEmpty ? 0.0 : completedCount / subtopics.length;
 
@@ -599,9 +692,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ],
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           childrenPadding: EdgeInsets.zero,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -656,7 +747,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           collapsedIconColor: Colors.grey[500],
           children: subtopics.map((subtopic) {
             final bool isCompleted = completedTopics[topic]?.contains(subtopic) ?? false;
-            
+
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               color: isCompleted ? Colors.green.withOpacity(0.05) : Colors.transparent,
@@ -698,7 +789,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   /// Returns appropriate icon based on topic name
   IconData _getTopicIcon(String topic) {
     final topicLower = topic.toLowerCase();
-    
+
     if (topicLower.contains('flutter') || topicLower.contains('ui') || topicLower.contains('front')) {
       return Icons.dashboard_customize_outlined;
     } else if (topicLower.contains('machine') || topicLower.contains('ai') || topicLower.contains('data')) {
@@ -712,7 +803,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     } else if (topicLower.contains('project') || topicLower.contains('build')) {
       return Icons.build_outlined;
     }
-    
+
     return Icons.code_outlined;
   }
 
@@ -725,7 +816,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       builder: (context, animatedProgress, child) {
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
-              margin: const EdgeInsets.only(top: 20), // Add top margin
+          margin: const EdgeInsets.only(top: 20),
           child: Center(
             child: Column(
               children: [
