@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'splashscreen.dart'; // Import the splash screen
+import 'splashscreen.dart'; 
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure Flutter is initialized
-
- // Load environment variables
+  WidgetsFlutterBinding.ensureInitialized(); 
   await dotenv.load(fileName: "./.env");
-  await Firebase.initializeApp(); // Initialize Firebase before using it
+  await Firebase.initializeApp(); 
 
-  String apiKey = dotenv.env['API_KEY'] ?? ''; // Fetch API key safely
+  String apiKey = dotenv.env['API_KEY'] ?? ''; 
   if (apiKey.isEmpty) {
     debugPrint("❌ API Key is missing! Check your .env file.");
   } else {
@@ -30,10 +28,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Equinox',
       theme: ThemeData(
-        primaryColor: const Color(0xFF3D59AB), // Deep Blue
-        useMaterial3: true, // Enables Material 3 for a modern UI
+        primaryColor: const Color(0xFF3D59AB), 
+        useMaterial3: true, 
       ),
-      home: const SplashScreen(), // Set SplashScreen as the home
+      home: const SplashScreen(), 
       debugShowCheckedModeBanner: false,
     );
   }

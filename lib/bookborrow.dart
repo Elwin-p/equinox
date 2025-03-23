@@ -148,7 +148,6 @@ class _BookBorrowMapState extends State<BookBorrowMap> {
           final GeoPoint location = userData['location'];
           final String address = userData['address'] ?? 'Address unknown';
           
-          // Fetch books for this user
           final booksSnapshot = await FirebaseFirestore.instance
               .collection('users')
               .doc(doc.id)
@@ -189,7 +188,7 @@ class _BookBorrowMapState extends State<BookBorrowMap> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Book Lender'), // Changed from showing username
+        title: const Text('Book Lender'), 
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
@@ -458,8 +457,6 @@ class _BookBorrowMapState extends State<BookBorrowMap> {
         MaterialPageRoute(builder: (context) => const CommunityForum()),
       );
     }
-    // Index 3 (Library) is already here, so no navigation
-    // Index 1 (Chat) is a placeholder, so no action
   }
 
   @override

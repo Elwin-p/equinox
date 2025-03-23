@@ -1,11 +1,8 @@
-//this is communtiyp page
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'homepage.dart';
 import 'bookborrow.dart';
 import 'chat.dart';
-
 
 class CommunityForum extends StatefulWidget {
   const CommunityForum({Key? key}) : super(key: key);
@@ -15,15 +12,15 @@ class CommunityForum extends StatefulWidget {
 }
 
 class _CommunityForumState extends State<CommunityForum> {
-  // Theme colors (same as BookBorrowMap)
-  final Color primaryColor = const Color(0xFF2D31FA);
-  final Color secondaryColor = const Color(0xFF5D8BF4);
-  final Color accentColor = const Color(0xFFFF8C32);
-  final Color bgColor = const Color(0xFFF9F9F9);
+  final Color primaryColor = const Color(0xFF3366FF);
+  final Color secondaryColor = const Color(0xFF6699FF);
+  final Color accentColor = const Color(0xFFFF9966);
+  final Color bgColor = const Color(0xFFF8F9FA);
+  final Color cardColor = Colors.white;
+  final Color textPrimaryColor = const Color(0xFF2D3748);
+  final Color textSecondaryColor = const Color(0xFF718096);
 
-  int _currentIndex = 2; // Community tab active
-
-  // Dummy data for Hirers section
+  int _currentIndex = 2; 
   final List<Map<String, String>> hirerPosts = [
     {
       'title': 'Looking for Math Tutor',
@@ -39,7 +36,6 @@ class _CommunityForumState extends State<CommunityForum> {
     },
   ];
 
-  // Dummy data for Learners section
   final List<Map<String, dynamic>> learnerPosts = [
     {
       'title': 'How to understand calculus better?',
@@ -70,27 +66,23 @@ class _CommunityForumState extends State<CommunityForum> {
     setState(() {
       _currentIndex = index;
     });
+    
     if (index == 0) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
-      
-    } 
-    else if (index == 1) {
+    } else if (index == 1) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ChatPage()),
       );
-    }
-    else if (index == 3) {
+    } else if (index == 3) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const BookBorrowMap()),
       );
     }
-    // Index 2 (Community) is already here, so no navigation
-    // Index 1 (Chat) is a placeholder, so no action
   }
 
   @override
@@ -102,20 +94,33 @@ class _CommunityForumState extends State<CommunityForum> {
           'Community Forum',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: textPrimaryColor,
+            fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: cardColor,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            color: Colors.grey[600],
+            color: textSecondaryColor,
             onPressed: () {
-              // Search functionality would go here (frontend-only, no action)
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            color: textSecondaryColor,
+            onPressed: () {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: accentColor,
+        elevation: 4,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+        },
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -123,86 +128,79 @@ class _CommunityForumState extends State<CommunityForum> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Hirers Section
-              Text(
-                'Hirer Announcements',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Column(
+
+              _buildFilterChips(),
+              const SizedBox(height: 24),
+              
+              _buildSectionHeader('Hirer Announcements', Icons.work_outline),
+              const SizedBox(height: 12),
+              _buildSectionContainer(
+                Column(
                   children: [
-                    Text(
-                      'View-only for Learners',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: secondaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 16, color: secondaryColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            'View-only for Learners',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: secondaryColor,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     ...hirerPosts.map((post) => _buildHirerPost(post)).toList(),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Learners Section
-              Text(
-                'Learner Q&A',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Column(
+              _buildSectionHeader('Learner Q&A', Icons.question_answer_outlined),
+              const SizedBox(height: 12),
+              _buildSectionContainer(
+                Column(
                   children: [
                     TextField(
                       decoration: InputDecoration(
                         hintText: 'Ask a question...',
-                        hintStyle: GoogleFonts.poppins(color: Colors.grey[600]),
+                        hintStyle: GoogleFonts.poppins(color: textSecondaryColor),
+                        filled: true,
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(Icons.help_outline),
+                        suffixIcon: Container(
+                          margin: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.send_rounded, 
+                            color: Colors.white, 
+                            size: 20
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 16,
+                          vertical: 14,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 20),
+                    // Posts
                     ...learnerPosts.map((post) => _buildLearnerPost(post)).toList(),
                   ],
                 ),
@@ -213,36 +211,37 @@ class _CommunityForumState extends State<CommunityForum> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
           ],
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
         ),
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: _onNavigationItemTapped,
             type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
+            backgroundColor: cardColor,
             selectedItemColor: primaryColor,
-            unselectedItemColor: Colors.grey[600],
+            unselectedItemColor: textSecondaryColor,
             selectedLabelStyle: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
             unselectedLabelStyle: GoogleFonts.poppins(fontSize: 12),
+            elevation: 0,
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.school_outlined),
@@ -251,7 +250,7 @@ class _CommunityForumState extends State<CommunityForum> {
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline_rounded),
-                activeIcon: Icon(Icons.chat_bubble_outlined),
+                activeIcon: Icon(Icons.chat_bubble),
                 label: 'Chat',
               ),
               BottomNavigationBarItem(
@@ -271,50 +270,190 @@ class _CommunityForumState extends State<CommunityForum> {
     );
   }
 
+  Widget _buildFilterChips() {
+    final List<String> filters = ['All Posts', 'Questions', 'Announcements', 'Trending'];
+    
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final bool isSelected = index == 0;
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                filters[index],
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isSelected ? Colors.white : textSecondaryColor,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                ),
+              ),
+              selected: isSelected,
+              backgroundColor: Colors.white,
+              selectedColor: primaryColor,
+              checkmarkColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? Colors.transparent : Colors.grey[300]!,
+                ),
+              ),
+              onSelected: (bool selected) {
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 22, color: primaryColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textPrimaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionContainer(Widget child) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   Widget _buildHirerPost(Map<String, String> post) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            post['title']!,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.business_center, color: accentColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post['title']!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                    Text(
+                      'Posted by ${post['author']} • ${post['timestamp']}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: textSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.bookmark_border, color: textSecondaryColor),
+                onPressed: () {},
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 12),
           Text(
             post['content']!,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.black54,
+              color: textPrimaryColor.withOpacity(0.8),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Posted by ${post['author']}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+              OutlinedButton.icon(
+                icon: const Icon(Icons.send_rounded, size: 16),
+                label: Text(
+                  'Apply',
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  side: BorderSide(color: primaryColor),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {},
               ),
-              Text(
-                post['timestamp']!,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+              InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.share_outlined, size: 16, color: textSecondaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Share',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: textSecondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -326,108 +465,162 @@ class _CommunityForumState extends State<CommunityForum> {
 
   Widget _buildLearnerPost(Map<String, dynamic> post) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            spreadRadius: 0,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_upward, size: 20),
-                color: primaryColor,
-                onPressed: () {},
-              ),
-              Text(
-                '${post['votes']}',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.arrow_downward, size: 20),
-                color: Colors.grey[600],
-                onPressed: () {},
+              // Voting Column
+              Column(
+                children: [
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.arrow_drop_up, 
+                      size: 32,
+                      color: post['votes'] > 0 ? primaryColor : textSecondaryColor,
+                    ),
+                    onPressed: () {},
+                  ),
+                  Text(
+                    '${post['votes']}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: post['votes'] > 0 ? primaryColor : textSecondaryColor,
+                    ),
+                  ),
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.arrow_drop_down, 
+                      size: 32,
+                      color: textSecondaryColor,
+                    ),
+                    onPressed: () {},
+                  ),
+                ],
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  post['title']!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post['title']!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      post['content']!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: textPrimaryColor.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Asked by ${post['author']} • ${post['timestamp']}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: textSecondaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            post['content']!,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Asked by ${post['author']}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                post['timestamp']!,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
               TextButton.icon(
-                icon: const Icon(Icons.comment, size: 18),
+                icon: const Icon(Icons.comment_outlined, size: 18),
                 label: Text(
-                  'Comment (${post['comments'].length})',
-                  style: GoogleFonts.poppins(fontSize: 12),
+                  '${post['comments'].length} Comments',
+                  style: GoogleFonts.poppins(fontSize: 14),
                 ),
-                style: TextButton.styleFrom(foregroundColor: secondaryColor),
+                style: TextButton.styleFrom(
+                  foregroundColor: secondaryColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
                 onPressed: () {},
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                    icon: Icon(Icons.bookmark_border, size: 20, color: textSecondaryColor),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                    icon: Icon(Icons.share_outlined, size: 20, color: textSecondaryColor),
+                    onPressed: () {},
+                  ),
+                ],
               ),
             ],
           ),
           if (post['comments'].isNotEmpty) ...[
-            const Divider(),
+            const Divider(height: 24),
             ...post['comments'].map((comment) => _buildComment(comment)).toList(),
           ],
-          const SizedBox(height: 8),
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Add a comment...',
-              hintStyle: GoogleFonts.poppins(color: Colors.grey[600]),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+          const SizedBox(height: 16),
+          // Comment input field
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Color(0xFFEEEEEE),
+                child: Icon(Icons.person_outline, size: 20, color: Color(0xFF666666)),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Add a comment...',
+                    hintStyle: GoogleFonts.poppins(color: textSecondaryColor, fontSize: 14),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.send_rounded, color: primaryColor, size: 20),
+                      onPressed: () {},
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -436,37 +629,90 @@ class _CommunityForumState extends State<CommunityForum> {
 
   Widget _buildComment(Map<String, dynamic> comment) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.subdirectory_arrow_right, size: 20, color: Colors.grey[400]),
-          const SizedBox(width: 8),
+          const CircleAvatar(
+            radius: 16,
+            backgroundColor: Color(0xFFEEEEEE),
+            child: Icon(Icons.person_outline, size: 20, color: Color(0xFF666666)),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  comment['content'],
-                  style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
-                ),
-                const SizedBox(height: 4),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'by ${comment['author']} • ${comment['timestamp']}',
-                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                      comment['author'],
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: textPrimaryColor,
+                      ),
                     ),
-                    Row(
-                      children: [
-                        Icon(Icons.thumb_up, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${comment['votes']}',
-                          style: GoogleFonts.poppins(fontSize: 12),
+                    const SizedBox(width: 8),
+                    Text(
+                      comment['timestamp'],
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: textSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  comment['content'],
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: textPrimaryColor.withOpacity(0.8),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.thumb_up_outlined,
+                              size: 14,
+                              color: textSecondaryColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${comment['votes']}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: textSecondaryColor,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Text(
+                          'Reply',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: secondaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -474,65 +720,6 @@ class _CommunityForumState extends State<CommunityForum> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Placeholder MainPage to demonstrate navigation (you might already have this)
-class MainPage extends StatefulWidget {
-  const MainPage({Key? key}) : super(key: key);
-
-  @override
-  _MainPageState createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const HomePage(), // Assuming HomePage exists elsewhere
-    const PlaceholderPage(title: 'Chat'),
-    const CommunityForum(),
-    const BookBorrowMap(), // Assuming BookBorrowMap exists elsewhere
-  ];
-
-  void _onNavigationItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-    );
-  }
-}
-
-// Placeholder Page for Chat (since it's not implemented)
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-
-  const PlaceholderPage({Key? key, required this.title}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          title,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Text(
-          '$title Page - Coming Soon!',
-          style: GoogleFonts.poppins(fontSize: 20),
-        ),
       ),
     );
   }
