@@ -1,0 +1,2 @@
+C:/Users/user/Documents/equinox/android/app/.cxx/RelWithDebInfo/711a1q5b/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/user/Documents/equinox/android/app/.cxx/RelWithDebInfo/711a1q5b/arm64-v8a/CMakeFiles/rebuild_cache.dir
