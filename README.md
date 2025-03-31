@@ -1,6 +1,6 @@
-# equinox
+# Equinox by Ctrl Z
 
-A new Flutter project.
+Equal Access. Infinite Growth.
 
 ## Getting Started
 
