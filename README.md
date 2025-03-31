@@ -1,16 +1,63 @@
 # Equinox by Ctrl Z
 
-Equal Access. Infinite Growth.
+Equinox is a revolutionary Flutter application designed to transform the educational experience by providing personalized learning roadmaps based on individual interests and skills.
 
-## Getting Started
+# 🌟Features
 
-This project is a starting point for a Flutter application.
+## Personalized Learning Roadmaps
 
-A few resources to get you started if this is your first Flutter project:
+Interest-based skill development paths
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Customized learning experiences
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Powered by Google's Gemini API
+
+## AI-Powered Learning Assistant (frontend)
+
+Built-in chatbot for answering questions
+
+Instant help with learning concepts
+
+## Community Forum (frontend)
+
+Post questions and get answers from peers
+
+Connect with experts in various fields
+
+Job board for employment opportunities
+
+Networking with potential employers
+
+## Resource Sharing Map
+
+Locate and share physical books in your area
+
+Google Maps integration for easy navigation
+
+Foster a community of knowledge sharing
+
+# 🛠️ Technologies Used
+
+Frontend: Flutter
+
+Backend: Firebase
+
+Database: Firestore
+
+## APIs:
+
+Google's Gemini API (AI Learning Roadmap)
+
+Google Maps API (Resource sharing map)
+
+
+
+# 📋 Current Status
+
+Complete Flutter application with functional UI
+
+Personalized roadmap generator fully implemented
+
+Resource sharing map functioning with Google Maps API
+
+Forum and AI chatbot currently implemented as frontend only (backend integration coming soon)
